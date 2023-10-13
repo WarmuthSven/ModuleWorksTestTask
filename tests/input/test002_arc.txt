@@ -1,0 +1,9 @@
+# test 01
+
+cloud 0.0 0.0 0.0  100 100 50 1.0     # refPoint nx ny nz deltaS
+
+delta 0.1                             # deltaT
+sphere 5.0                            # sphereRadius R
+
+start 50.0 20.0 50.0                   # startPos
+arc  80.0 50.0 50.0 50.0 50.0 50.0 1  # nextPos arcCenter isCounterClockwise

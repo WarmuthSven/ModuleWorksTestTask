@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset=utf-8>
+	<title>Point Visualizer</title>
+	<style>
+		html {
+			margin: 0;
+			height: 100%
+		}
+
+		body {
+			float: left;
+			margin: 0;
+			height: 100%;
+			max-height: 100%;
+			width: 100%;
+		}
+
+		canvas {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			float: left
+		}
+
+		label {
+			font-family: monospace;
+			margin-right: 0.5rem;
+		}
+	</style>
+</head>
+
+<body>
+	<script src="three.js"></script>
+	<script src="OrbitControls.js"></script>
+
+
+	<div>
+		<div style="margin: 0.2rem; ">
+			<label for="newFile">New output:</label>
+			<input type="file" id="newFile" accept=".txt" />
+			<label id="newFileName" hidden></label>
+			<label for="oldFile">Old output:</label>
+			<label id="oldFileName" hidden></label>
+			<input type="file" id="oldFile" accept=".txt" />
+		</div>
+		<div style="margin: 0.2rem; ">
+			<button id="clearBtn">Clear</button>
+			<button id="resetCamerBtn">Reset camera</button>
+			<label>Show:</label>
+			<input type="checkbox" id="new">
+			<label for="new" id="newLbl">New (0)</label>
+			<input type="checkbox" id="old">
+			<label for="old" id="oldLbl">Old (0)</label>
+			<input type="checkbox" id="newAndOld">
+			<label for="newAndOld" id="newAndOldLbl">New AND old (N/A)</label>
+			<input type="checkbox" id="newMinusOld">
+			<label for="newMinusOld" id="newMinusOldLbl">New - old (N/A)</label>
+			<input type="checkbox" id="oldMinusNew">
+			<label for="oldMinusNew" id="oldMinusNewLbl">Old - new (N/A)</label>
+		</div>
+	</div>
+	<div id="container"></div>
+
+	<script>
+		var predefinedContents =
+		{
+			'new': `%NEW_TEST_OUTPUT%`,
+			'old': `%OLD_TEST_OUTPUT%`,
+			'newFileName': `%NEW_FILENAME%`,
+			'oldFileName': `%OLD_FILENAME%`
+		};
+	</script>
+	<script>
+		container = document.getElementById('container');
+
+		var renderer = new THREE.WebGLRenderer({ antialias: true });
+		container.appendChild(renderer.domElement);
+		renderer.setSize(window.innerWidth, window.innerHeight, false);
+
+		var scene = new THREE.Scene();
+
+		var camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, -1000, 1000);
+
+		var controls = new THREE.OrbitControls(camera, renderer.domElement);
+		controls.screenSpacePanning = true;
+
+		function animate() {
+			requestAnimationFrame(animate);
+			renderer.render(scene, camera);
+		}
+
+		function switchToCompareMode()
+		{
+			document.getElementById('new').checked = false;
+			document.getElementById('old').checked = false;
+			document.getElementById('newAndOld').checked = true;
+			document.getElementById('newMinusOld').checked = true;
+			document.getElementById('oldMinusNew').checked = true;
+			displayContents(true);
+		}
+
+		function switchToNewOrOld()
+		{
+			document.getElementById('new').checked = true;
+			document.getElementById('old').checked = true;
+			document.getElementById('newAndOld').checked = false;
+			document.getElementById('newMinusOld').checked = false;
+			document.getElementById('oldMinusNew').checked = false;
+			displayContents(true);
+		}
+
+		function switchToNew()
+		{
+			document.getElementById('new').checked = true;
+			document.getElementById('old').checked = false;
+			document.getElementById('newAndOld').checked = false;
+			document.getElementById('newMinusOld').checked = false;
+			document.getElementById('oldMinusNew').checked = false;
+			displayContents(true);
+		}
+
+		var fileContents = {};
+		
+
+		function readSingleFile(filePickedEvent) {
+			var file = filePickedEvent.target.files[0];
+			if (!file) {
+				delete fileContents[filePickedEvent.target.id];
+				return;
+			}
+			var reader = new FileReader();
+			reader.onload = function (e) {
+				var contents = e.target.result;
+				let oldSize = Object.keys(fileContents).length;
+				if (filePickedEvent.target.id == "newFile") {
+					fileContents['new'] = contents;
+				}
+				else {
+					fileContents['old'] = contents;
+				}
+				if (Object.keys(fileContents).length > 1 && Object.keys(fileContents).length > oldSize)
+				{
+					switchToCompareMode();
+				}
+				else if (Object.keys(fileContents).length > oldSize)
+				{
+					switchToNewOrOld();
+				}
+				else
+				{
+					displayContents(true);
+				}
+			};
+			reader.readAsText(file);
+		}
+
+		function parseVertices(contents) {
+			var box = new THREE.Box3;
+			lines = contents.replaceAll('\r\n', '\n').split('\n');
+			var pointToAdd = new THREE.Vector3;
+			var vertices = [];
+			for (var line = 0; line < lines.length; line++) {
+				var values = lines[line].split(' ');
+				if (values.length < 3) continue;
+				var x = parseFloat(values[0]);
+				var y = parseFloat(values[1]);
+				var z = parseFloat(values[2]);
+				pointToAdd.x = x;
+				pointToAdd.y = y;
+				pointToAdd.z = z;
+				box.expandByPoint(pointToAdd);
+				vertices.push(x, y, z);
+			}
+			return { "box": box, "vertices": vertices };
+		}
+
+		function arrayOfPointsToMap(arr) {
+			vertices = new Map();
+
+			for (var i = 0; i < arr.length; i += 3) {
+				x = arr[i];
+				y = arr[i + 1];
+				z = arr[i + 2];
+
+				yzMap = vertices.get(x);
+				if (yzMap === undefined) {
+					vertices.set(x, new Map());
+					yzMap = vertices.get(x);
+				}
+				zMap = yzMap.get(y);
+				if (zMap == undefined) {
+					yzMap.set(y, new Set());
+					zMap = yzMap.get(y);
+				}
+				zMap.add(z);
+			}
+			return vertices;
+		}
+
+		function intersection(xyzA, xyzB) {
+			const _intersection = [];
+			for (const [x, yzB] of xyzB.entries()) {
+				yzA = xyzA.get(x)
+				if (yzA === undefined)
+					continue;
+				for (const [y, zB] of yzB.entries()) {
+					zA = yzA.get(y);
+					if (zA === undefined)
+						continue;
+					for (const z of zB) {
+						if (!zA.has(z))
+							continue;
+						_intersection.push(x, y, z);
+					}
+				}
+			}
+			return _intersection;
+		}
+
+		function difference(xyzA, xyzB) {
+			const _difference = [];
+			for (const [x, yzA] of xyzA.entries()) {
+				yzB = xyzB.get(x)
+				for (const [y, zA] of yzA.entries()) {
+					zB = undefined
+					if (yzB !== undefined) {
+						zB = yzB.get(y);
+					}
+
+					for (const z of zA) {
+						if (zB === undefined || !zB.has(z))
+							_difference.push(x, y, z);
+					}
+				}
+			}
+			return _difference;
+		}
+
+		function displayContents(isResetCamera) {
+			if (Object.keys(fileContents).length == 0) {
+				scene.clear();
+				return;
+			}
+
+			container.style.visibility = "inherit";
+			var geometry = new THREE.BufferGeometry();
+
+			clouds = {};
+			var totalBox = new THREE.Box3;
+			for (var key in fileContents) {
+				vertices_and_box = parseVertices(fileContents[key]);
+				totalBox.union(vertices_and_box.box);
+				clouds[key] = { vertices: vertices_and_box.vertices, colors: [] };
+			}
+
+			var calculated_set_names = ['newAndOld', 'newMinusOld', 'oldMinusNew'];
+
+			if (("new" in clouds) && ("old" in clouds)) {
+				// calculate difference
+				let new_points = arrayOfPointsToMap(clouds["new"].vertices);
+				let old_points = arrayOfPointsToMap(clouds["old"].vertices);
+
+				clouds[calculated_set_names[0]] = { vertices: intersection(new_points, old_points), colors: [] };
+				clouds[calculated_set_names[0]].colors = [];
+				for (var i = 0; i < clouds[calculated_set_names[0]].vertices.length; i += 3) {
+					clouds[calculated_set_names[0]].colors.push(0, 1, 0);
+				}
+
+				clouds[calculated_set_names[1]] = { vertices: difference(new_points, old_points), colors: [] };
+				clouds[calculated_set_names[1]].colors = [];
+				for (var i = 0; i < clouds[calculated_set_names[1]].vertices.length; i += 3) {
+					clouds[calculated_set_names[1]].colors.push(1, 0, 0);
+				}
+
+				clouds[calculated_set_names[2]] = { vertices: difference(old_points, new_points), colors: [] };
+				clouds[calculated_set_names[2]].colors = [];
+				for (var i = 0; i < clouds[calculated_set_names[2]].vertices.length; i += 3) {
+					clouds[calculated_set_names[2]].colors.push(0, 0, 1);
+				}
+			}
+
+			var size = new THREE.Vector3;
+			totalBox.getSize(size);
+			var zRange = Math.max(1, size.z);
+			var minZ = totalBox.min.z;
+			for (var key in clouds) {
+				if (key != 'new' && key != 'old')
+					continue;
+
+				for (var i = 0; i < clouds[key].vertices.length; i += 3) {
+					var z = clouds[key].vertices[i + 2];
+					var c = new THREE.Color();
+					var inter = (z - minZ) / zRange;
+					c.setHSL(inter, 1.0, 0.5);
+					clouds[key].colors.push(c.r, c.g, c.b);
+				}
+			}
+
+			vertices = [];
+			colors = [];
+			for (key in clouds) {
+				checkbox = document.getElementById(key);
+				lbl = document.getElementById(key + 'Lbl');
+				[base, dummy] = lbl.innerHTML.split('(');
+				lbl.innerHTML = base + '(' + clouds[key].vertices.length / 3 + ')';
+				if (checkbox.checked) {
+					vertices = vertices.concat(clouds[key].vertices);
+					colors = colors.concat(clouds[key].colors);
+				}
+			}
+
+			var center = new THREE.Vector3;
+			totalBox.getCenter(center);
+			if (isResetCamera) {
+				controls.reset();
+				controls.target.set(center.x, center.y, center.z);
+				camera.position.set(center.x, center.y, center.z + Math.max(1, size.z));
+			}
+			controls.update();
+
+			geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+			geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+			material = new THREE.PointsMaterial({ size: 2, sizeAttenuation: false, vertexColors: true });
+
+			var particles = new THREE.Points(geometry, material);
+			scene.clear();
+			scene.add(particles);
+		}
+
+		function onWindowResize() {
+			camera.left = window.innerWidth / -2;
+			camera.bottom = window.innerHeight / -2;
+			camera.right = window.innerWidth / 2;
+			camera.top = window.innerHeight / 2;
+			camera.updateProjectionMatrix();
+			renderer.setSize(window.innerWidth, window.innerHeight, false);
+		}
+
+		function onCheckboxChange(e) {
+			displayContents(false);
+		}
+
+		document.getElementById('newFile').addEventListener('change', readSingleFile, false);
+		document.getElementById('oldFile').addEventListener('change', readSingleFile, false);
+		document.getElementById('clearBtn').onclick = function () {
+			newFile = document.getElementById('newFile');
+			oldFile = document.getElementById('oldFile');
+			newFile.value = '';
+			oldFile.value = '';
+			newFile.hidden = false;
+			oldFile.hidden = false;
+			document.getElementById('newFileName').hidden = true;
+			document.getElementById('oldFileName').hidden = true;
+			fileContents = {};
+			for(var lblId of ['new', 'old', 'newAndOld', 'newMinusOld', 'oldMinusNew'])
+			{
+				lbl = document.getElementById(lblId + 'Lbl');
+				[base, dummy] = lbl.innerHTML.split('(');
+				lbl.innerHTML = base + '(0)';
+			}
+			switchToNewOrOld();
+		};
+		document.getElementById('resetCamerBtn').onclick = function () { displayContents(true) };
+		document.getElementById('new').addEventListener('change', onCheckboxChange, false);
+		document.getElementById('old').addEventListener('change', onCheckboxChange, false);
+		document.getElementById('newAndOld').addEventListener('change', onCheckboxChange, false);
+		document.getElementById('newMinusOld').addEventListener('change', onCheckboxChange, false);
+		document.getElementById('oldMinusNew').addEventListener('change', onCheckboxChange, false);
+
+
+		let isNewPredefined = 'new' in predefinedContents && !predefinedContents['new'].startsWith('%');
+		let isOldPredefined = 'old' in predefinedContents && !predefinedContents['old'].startsWith('%');
+		if (isNewPredefined || isOldPredefined) {
+			// Initialize with hardcoded points if they exist
+			if (isNewPredefined) {
+				fileContents['new'] = predefinedContents['new'];
+				document.getElementById('newFile').hidden = true;
+				document.getElementById('newFileName').hidden = false;
+				document.getElementById('newFileName').innerHTML = predefinedContents['newFileName'];
+				delete predefinedContents['new'];
+				delete predefinedContents['newFileName'];
+			}
+			if (isOldPredefined) {
+				fileContents['old'] = predefinedContents['old'];
+				document.getElementById('oldFile').hidden = true;
+				document.getElementById('oldFileName').hidden = false;
+				document.getElementById('oldFileName').innerHTML = predefinedContents['oldFileName'];
+				delete predefinedContents['old'];
+				delete predefinedContents['oldFileName'];
+			}
+			switchToNew();
+		}
+
+		window.addEventListener('resize', onWindowResize, false);
+
+		animate();
+	</script>
+
+</body>
+
+</html>

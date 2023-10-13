@@ -1,0 +1,9 @@
+# test 01
+
+cloud -100.0 -100.0 0.0  200 200 50 1.0     # refPoint nx ny nz deltaS
+
+delta 0.1                             # deltaT
+sphere 10.0                            # sphereRadius R
+
+start -80.0 -80.0 50.0                  # startPos
+line 80.0 80.0 30.0                   # nextPos

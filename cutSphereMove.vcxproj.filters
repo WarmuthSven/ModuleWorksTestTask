@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="library\src\misc\mwTestInput.cpp">
+      <Filter>library\src\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="library\src\misc\mwTestOutput.cpp">
+      <Filter>library\src\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="library\include\geometry\mwDiscreteFunction.hpp">
+      <Filter>library\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="library\include\geometry\mwTPoint3d.hpp">
+      <Filter>library\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="library\include\mathdef\mwMathConstants.hpp">
+      <Filter>library\include\mathdef</Filter>
+    </ClInclude>
+    <ClInclude Include="library\include\misc\mwTestInput.hpp">
+      <Filter>library\include\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="library\include\misc\mwTestOutput.hpp">
+      <Filter>library\include\misc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="library">
+      <UniqueIdentifier>{50C69220-3016-3F39-86FC-A1CCC43AD4D2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="library\include">
+      <UniqueIdentifier>{E38FC8A7-E351-3F55-BE75-2991577DAE29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="library\include\geometry">
+      <UniqueIdentifier>{2BDCCD25-A1A3-3AA2-81E6-D523931F932C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="library\include\mathdef">
+      <UniqueIdentifier>{55C3E860-4AA6-390E-8172-45ED0E7B75BD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="library\include\misc">
+      <UniqueIdentifier>{379E19CE-ED89-35C0-83CB-1D791C1B9C28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="library\src">
+      <UniqueIdentifier>{60B1B105-1A6E-3203-905D-62D216FE7441}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="library\src\misc">
+      <UniqueIdentifier>{56E24A2D-783A-371C-832B-67425323F83A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
