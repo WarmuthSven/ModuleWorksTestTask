@@ -264,6 +264,7 @@
     <ClInclude Include="library\include\geo\Point3.hpp" />
     <ClInclude Include="library\include\io\TestInput.hpp" />
     <ClInclude Include="library\include\io\TestOutput.hpp" />
+    <ClCompile Include="library\src\calc\CalcVisPoints.cpp" />
     <ClCompile Include="library\src\io\TestInput.cpp" />
     <ClCompile Include="library\src\io\TestOutput.cpp" />
     <ClCompile Include="main.cpp" />
