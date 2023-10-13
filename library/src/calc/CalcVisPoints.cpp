@@ -29,10 +29,99 @@ namespace calc
         const double deltaT,
         const std::filesystem::path& outputFileName)
     {
+        // TODO: Check if nx,ny,nz,deltaS,sphereRadius,deltaT are positive
+        
         io::TestOutput to(outputFileName);
         // Implement your solution here:
 
-        // TODO: output resulting points
-        to.Write(geo::Point3D(0, 0, 0));
+        std::vector pointCloud(nx,std::vector(ny,std::vector<geo::Point3D>(nz)));
+
+        // Create Base PointCloud
+        double x = refPoint.x();
+        for (int ix = 0; ix < nx; ix++)
+        {
+            double y = refPoint.y();
+            for (int iy = 0; iy < ny; iy++)
+            {
+                double z = refPoint.z();
+                for (int iz = 0; iz < nz; iz++)
+                {
+                    pointCloud[ix][iy][iz] = geo::Point3D(x,y,z);
+                    z+= deltaS;
+                }
+                
+                y+= deltaS;
+            }
+            
+            x += deltaS;
+        }
+
+        // Remove points along trajectory of sphere
+        double t1 = 0.0;
+        double t2 = deltaT;
+        const double sphereRadiusSquared = std::pow(sphereRadius,2.0);
+        geo::Point3D curPoint;
+        geo::Point3D sphereStartPoint;
+        geo::Point3D sphereEndPoint;
+        geo::Point3D direction;
+        std::vector<geo::Point3I> deletePoints;
+        while(t2 <= 1.0)
+        {
+            sphereStartPoint = curve.Evaluate(t1);
+            sphereEndPoint = curve.Evaluate(t2);
+            direction = sphereEndPoint - sphereStartPoint;
+            direction.Normalize();
+            // Delete points in Sphere at Start and Endpoint
+            for (int ix = 0; ix < pointCloud.size(); ix++)
+            {
+                for (int iy = 0; iy < pointCloud[ix].size(); iy++)
+                {
+                    for (int iz = 0; iz < pointCloud[iy].size(); iz++)
+                    {
+                        curPoint = pointCloud[ix][iy][iz];
+
+                        //Add deleted elements around sphere start point
+                        geo::Point3D distance = curPoint - sphereStartPoint;
+                        if(distance.Length2() <= sphereRadiusSquared)
+                        {
+                            deletePoints.emplace_back(geo::Point3I(ix,iy,iz));
+                            break;
+                        }
+
+                        //Add deleted elements around sphere end point
+                        distance = curPoint - sphereEndPoint;
+                        if(distance.Length2() <= sphereRadiusSquared)
+                        {
+                            deletePoints.emplace_back(geo::Point3I(ix,iy,iz));
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            
+            t1 = t2;
+            t2 += deltaT;
+            if(t1 < 1.0 && t2 > 1.0)
+            {
+                t2 = 1.0;
+            }
+        }
+
+        // Delete points backwards so positions stay correct when Vector size changes
+        for(int i = deletePoints.size() - 1; i >= 0; i--)
+        {
+            geo::Point3I point = deletePoints[i];
+            pointCloud[point.x()][point.y()].erase(pointCloud[point.x()][point.y()].begin() + point.z());
+        }
+        
+        // Write uppermost points to file
+        for (int ix = 0; ix < pointCloud.size(); ix++)
+        {
+            for (int iy = 0; iy < pointCloud[ix].size(); iy++)
+            {
+                to.Write(pointCloud[ix][iy].back());
+            }
+        }
     }
 }
