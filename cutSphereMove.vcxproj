@@ -261,12 +261,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="library\include\geo\Curve.hpp" />
-    <ClInclude Include="library\include\geo\TPoint3d.hpp" />
+    <ClInclude Include="library\include\geo\Point3.hpp" />
     <ClInclude Include="library\include\io\TestInput.hpp" />
     <ClInclude Include="library\include\io\TestOutput.hpp" />
+    <ClCompile Include="library\src\calc\CalcVisPoints.cpp" />
     <ClCompile Include="library\src\io\TestInput.cpp" />
     <ClCompile Include="library\src\io\TestOutput.cpp" />
     <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="library\include\calc\CalcVisPoints.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

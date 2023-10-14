@@ -297,4 +297,5 @@ inline Point3<T> operator%(const Point3<T>& first, const Point3<T>& second)
 
 using Point3D = Point3<double>;
 using Point3F = Point3<float>;
+using Point3I = Point3<int>;
 }  // namespace geo
