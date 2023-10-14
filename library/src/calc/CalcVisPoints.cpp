@@ -113,7 +113,7 @@ namespace calc
                 }
             }
             
-            // Delete points backwards so positions stay correct when Vector size changes
+            // Delete points backwards so array positions stay correct when Array size changes
             for(int i = deletePoints.size() - 1; i >= 0; i--)
             {
                 geo::Point3I point = deletePoints[i];
