@@ -128,45 +128,15 @@ namespace calc
                 t2 = 1.0;
             }
         }
-
-        
         
         // Write uppermost points to file, x before y coordinates
         for (int ix = 0; ix < pointCloud.size(); ix++)
         {
             for (int iy = 0; iy < pointCloud[ix].size(); iy++)
             {
-                geo::Point3D upperPoint = pointCloud[ix][iy].back();
-                geo::Point3D nextLowerPoint =pointCloud[ix][iy][pointCloud[ix][iy].size()-2];
                 // TODO: Check if vector is empty, than ignore point
-                if(upperPoint.z() - nextLowerPoint.z() > 1.1)
-                {
-                    to.Write(nextLowerPoint);
-                } else
-                {
-                    to.Write(upperPoint);
-                }
-                
+                to.Write(pointCloud[ix][iy].back());
             }
         }
-
-        // Write uppermost points to file, y before x coordinates
-        // Note: Ineffective Memory Access
-        /*for (int iy = 0; iy < ny; iy++)
-        {
-            for (int ix = 0; ix < nx; ix++)
-            {
-                geo::Point3D upperPoint = pointCloud[ix][iy].back();
-                geo::Point3D nextLowerPoint = pointCloud[ix][iy][pointCloud[ix][iy].size()-2];
-                // TODO: Check if vector is empty, than ignore point
-                if(upperPoint.z() - nextLowerPoint.z() > 1.1)
-                {
-                    to.Write(nextLowerPoint);
-                } else
-                {
-                    to.Write(upperPoint);
-                }
-            }
-        }*/
     }
 }
