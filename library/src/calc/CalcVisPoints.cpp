@@ -74,7 +74,7 @@ namespace calc
                     for (int iz = 0; iz < pointCloud[ix][iy].size(); iz++)
                     {
                         geo::Point3D curPoint = pointCloud[ix][iy][iz];
-
+                        
                         //Add deleted elements around sphere start point
                         geo::Point3D distance = curPoint - sphereStartPoint;
                         if(distance.Length2() <= sphereRadiusSquared)
@@ -131,14 +131,42 @@ namespace calc
 
         
         
-        // Write uppermost points to file
+        // Write uppermost points to file, x before y coordinates
         for (int ix = 0; ix < pointCloud.size(); ix++)
         {
             for (int iy = 0; iy < pointCloud[ix].size(); iy++)
             {
+                geo::Point3D upperPoint = pointCloud[ix][iy].back();
+                geo::Point3D nextLowerPoint =pointCloud[ix][iy][pointCloud[ix][iy].size()-2];
                 // TODO: Check if vector is empty, than ignore point
-                to.Write(pointCloud[ix][iy].back());
+                if(upperPoint.z() - nextLowerPoint.z() > 1.1)
+                {
+                    to.Write(nextLowerPoint);
+                } else
+                {
+                    to.Write(upperPoint);
+                }
+                
             }
         }
+
+        // Write uppermost points to file, y before x coordinates
+        // Note: Ineffective Memory Access
+        /*for (int iy = 0; iy < ny; iy++)
+        {
+            for (int ix = 0; ix < nx; ix++)
+            {
+                geo::Point3D upperPoint = pointCloud[ix][iy].back();
+                geo::Point3D nextLowerPoint = pointCloud[ix][iy][pointCloud[ix][iy].size()-2];
+                // TODO: Check if vector is empty, than ignore point
+                if(upperPoint.z() - nextLowerPoint.z() > 1.1)
+                {
+                    to.Write(nextLowerPoint);
+                } else
+                {
+                    to.Write(upperPoint);
+                }
+            }
+        }*/
     }
 }
