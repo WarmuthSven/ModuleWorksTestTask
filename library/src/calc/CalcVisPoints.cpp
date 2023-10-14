@@ -71,7 +71,7 @@ namespace calc
             {
                 for (int iy = 0; iy < pointCloud[ix].size(); iy++)
                 {
-                    for (int iz = 0; iz < pointCloud[iy].size(); iz++)
+                    for (int iz = 0; iz < pointCloud[ix][iy].size(); iz++)
                     {
                         geo::Point3D curPoint = pointCloud[ix][iy][iz];
 
@@ -119,6 +119,7 @@ namespace calc
                 geo::Point3I point = deletePoints[i];
                 pointCloud[point.x()][point.y()].erase(pointCloud[point.x()][point.y()].begin() + point.z());
             }
+            deletePoints.clear();
             
             t1 = t2;
             t2 += deltaT;
