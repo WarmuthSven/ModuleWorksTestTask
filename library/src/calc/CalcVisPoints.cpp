@@ -32,8 +32,8 @@ namespace calc
         // TODO: Check if nx,ny,nz,deltaS,sphereRadius,deltaT are positive
         
         io::TestOutput to(outputFileName);
+        
         // Implement your solution here:
-
         std::vector pointCloud(nx,std::vector(ny,std::vector<geo::Point3D>(nz)));
 
         // Create Base PointCloud
@@ -60,17 +60,12 @@ namespace calc
         double t1 = 0.0;
         double t2 = deltaT;
         const double sphereRadiusSquared = std::pow(sphereRadius,2.0);
-        geo::Point3D curPoint;
-        geo::Point3D sphereStartPoint;
-        geo::Point3D sphereEndPoint;
-        geo::Point3D direction;
         std::vector<geo::Point3I> deletePoints;
         while(t2 <= 1.0)
         {
-            sphereStartPoint = curve.Evaluate(t1);
-            sphereEndPoint = curve.Evaluate(t2);
-            direction = sphereEndPoint - sphereStartPoint;
-            direction.Normalize();
+            geo::Point3D sphereStartPoint = curve.Evaluate(t1);
+            geo::Point3D sphereEndPoint = curve.Evaluate(t2);
+            geo::Point3D direction = sphereEndPoint - sphereStartPoint;
             // Delete points in Sphere at Start and Endpoint
             for (int ix = 0; ix < pointCloud.size(); ix++)
             {
@@ -78,7 +73,7 @@ namespace calc
                 {
                     for (int iz = 0; iz < pointCloud[iy].size(); iz++)
                     {
-                        curPoint = pointCloud[ix][iy][iz];
+                        geo::Point3D curPoint = pointCloud[ix][iy][iz];
 
                         //Add deleted elements around sphere start point
                         geo::Point3D distance = curPoint - sphereStartPoint;
@@ -88,8 +83,28 @@ namespace calc
                             break;
                         }
 
-                        //Add deleted elements around sphere end point
-                        distance = curPoint - sphereEndPoint;
+                        //Only check end of travel at last time frame
+                        if(t2 >= 1.0)
+                        {
+                            //Add deleted elements around sphere end point
+                            distance = curPoint - sphereEndPoint;
+                            if(distance.Length2() <= sphereRadiusSquared)
+                            {
+                                deletePoints.emplace_back(geo::Point3I(ix,iy,iz));
+                                break;
+                            }
+                        }
+                        
+
+                        //Add deleted elements on linear path
+                        const double pathwaySegment = (curPoint * direction - sphereStartPoint * direction) / (direction * direction);
+                        if(pathwaySegment < 0 || pathwaySegment > 1)
+                        {
+                            break;
+                        }
+
+                        geo::Point3D orthoIntersectPoint = sphereStartPoint + direction * pathwaySegment;
+                        distance = curPoint - orthoIntersectPoint;
                         if(distance.Length2() <= sphereRadiusSquared)
                         {
                             deletePoints.emplace_back(geo::Point3I(ix,iy,iz));
@@ -99,6 +114,12 @@ namespace calc
                 }
             }
             
+            // Delete points backwards so positions stay correct when Vector size changes
+            for(int i = deletePoints.size() - 1; i >= 0; i--)
+            {
+                geo::Point3I point = deletePoints[i];
+                pointCloud[point.x()][point.y()].erase(pointCloud[point.x()][point.y()].begin() + point.z());
+            }
             
             t1 = t2;
             t2 += deltaT;
@@ -108,12 +129,7 @@ namespace calc
             }
         }
 
-        // Delete points backwards so positions stay correct when Vector size changes
-        for(int i = deletePoints.size() - 1; i >= 0; i--)
-        {
-            geo::Point3I point = deletePoints[i];
-            pointCloud[point.x()][point.y()].erase(pointCloud[point.x()][point.y()].begin() + point.z());
-        }
+        
         
         // Write uppermost points to file
         for (int ix = 0; ix < pointCloud.size(); ix++)
