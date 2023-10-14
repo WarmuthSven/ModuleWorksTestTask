@@ -80,7 +80,7 @@ namespace calc
                         if(distance.Length2() <= sphereRadiusSquared)
                         {
                             deletePoints.emplace_back(geo::Point3I(ix,iy,iz));
-                            break;
+                            continue;
                         }
 
                         //Only check end of travel at last time frame
@@ -91,16 +91,15 @@ namespace calc
                             if(distance.Length2() <= sphereRadiusSquared)
                             {
                                 deletePoints.emplace_back(geo::Point3I(ix,iy,iz));
-                                break;
+                                continue;
                             }
                         }
                         
-
                         //Add deleted elements on linear path
                         const double pathwaySegment = (curPoint * direction - sphereStartPoint * direction) / (direction * direction);
                         if(pathwaySegment < 0 || pathwaySegment > 1)
                         {
-                            break;
+                            continue;
                         }
 
                         geo::Point3D orthoIntersectPoint = sphereStartPoint + direction * pathwaySegment;
@@ -108,7 +107,7 @@ namespace calc
                         if(distance.Length2() <= sphereRadiusSquared)
                         {
                             deletePoints.emplace_back(geo::Point3I(ix,iy,iz));
-                            break;
+                            continue;
                         }
                     }
                 }
@@ -136,6 +135,7 @@ namespace calc
         {
             for (int iy = 0; iy < pointCloud[ix].size(); iy++)
             {
+                // TODO: Check if vector is empty, than ignore point
                 to.Write(pointCloud[ix][iy].back());
             }
         }
