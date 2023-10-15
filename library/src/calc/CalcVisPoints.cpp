@@ -1,8 +1,9 @@
 ﻿#include "calc/CalcVisPoints.hpp"
+
 #include "io/TestOutput.hpp"
 
-#include <string>
 #include <vector>
+#include <cassert>
 
 namespace calc
 {
@@ -18,6 +19,7 @@ namespace calc
     ///	@param curve 3d curve that defines trajectory of the sphere
     ///	@param deltaT step size for 3d curve parameter
     ///	@param outputFileName name of the output file with result
+    ///	@throws std::invalid_argument if any of the parameters (nx, ny, nz, deltaS or deltaT) are not greater than 0.
     void Calculate(
         const geo::Point3D& refPoint,
         const int nx,
@@ -29,7 +31,10 @@ namespace calc
         const double deltaT,
         const std::filesystem::path& outputFileName)
     {
-        // TODO: Check if nx,ny,nz,deltaS,sphereRadius,deltaT are positive
+        if(nx <= 0 || ny <= 0 || nz <= 0 || deltaT <= 0 || deltaS <= 0)
+        {
+            throw std::invalid_argument("Invalid argument for Calculate. nx, ny, nz, deltaT and deltaS have to be greater than 0.");
+        }
         
         io::TestOutput to(outputFileName);
         
@@ -144,6 +149,11 @@ namespace calc
         {
             for (int iy = 0; iy < pointCloud[ix].size(); iy++)
             {
+                if(pointCloud[ix][iy].empty())
+                {
+                    continue;
+                }
+                
                 to.Write(pointCloud[ix][iy].back());
             }
         }
