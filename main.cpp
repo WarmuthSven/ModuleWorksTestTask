@@ -21,16 +21,19 @@ int main(int argc, char* argv[])
 	{
 		io::TestInput test(testInput);
 
-		calc::Calculate(
+		calc::PointCloud pointCloud = calc::PointCloud(
 			test.cloudReferencePoint,
 			test.cloudNX,
 			test.cloudNY,
 			test.cloudNZ,
-			test.cloudDeltaS,
+			test.cloudDeltaS);
+		
+		pointCloud.RemovePointsOnSpherePath(
 			test.sphereRadius,
 			*test.curve,
-			test.curveDeltaT,
-			testOutput);
+			test.curveDeltaT);
+
+		pointCloud.CalculatePointsOnTopAndSaveToFile(testOutput);
 	}
 	catch (std::exception& e)
 	{

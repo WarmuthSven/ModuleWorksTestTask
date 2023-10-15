@@ -3,11 +3,10 @@
 #include "io/TestOutput.hpp"
 
 #include <vector>
-#include <cassert>
 
 namespace calc
 {
-    /// Calculate the result and output it to the outputFileName
+    /// Create PointCloud
     ///
     ///	@param refPoint reference point O of the cloud, which is a point with the minimum values along
     /// all coordinate axes
@@ -15,43 +14,36 @@ namespace calc
     ///	@param ny number of points in cloud along y axis
     ///	@param nz number of points in cloud along z axis
     ///	@param deltaS distance between neighboring cloud points along x, y and z axis
-    ///	@param sphereRadius radius R of the sphere
-    ///	@param curve 3d curve that defines trajectory of the sphere
-    ///	@param deltaT step size for 3d curve parameter
-    ///	@param outputFileName name of the output file with result
-    ///	@throws std::invalid_argument if any of the parameters (nx, ny, nz, deltaS or deltaT) are not greater than 0.
-    void Calculate(
+    ///	@throws std::invalid_argument if any of the parameters (nx, ny, nz or deltaS) are not greater than 0.
+    PointCloud::PointCloud(
         const geo::Point3D& refPoint,
         const int nx,
         const int ny,
         const int nz,
-        const double deltaS,
-        const double sphereRadius,
-        const geo::Curve& curve,
-        const double deltaT,
-        const std::filesystem::path& outputFileName)
+        const double deltaS): m_refPoint(refPoint),
+        m_nx(nx),
+        m_ny(ny),
+        m_nz(nz),
+        m_deltaS(deltaS)
     {
-        if(nx <= 0 || ny <= 0 || nz <= 0 || deltaT <= 0 || deltaS <= 0)
+        if(nx <= 0 || ny <= 0 || nz <= 0 || deltaS <= 0)
         {
-            throw std::invalid_argument("Invalid argument for Calculate. nx, ny, nz, deltaT and deltaS have to be greater than 0.");
+            throw std::invalid_argument("Invalid argument for PointCloud Constructor. nx, ny, nz and deltaS have to be greater than 0.");
         }
         
-        io::TestOutput to(outputFileName);
-        
-        // Implement your solution here:
-        std::vector<std::vector<std::vector<geo::Point3D>>> pointCloud(nx,std::vector(ny,std::vector<geo::Point3D>(nz)));
+        m_pointCloud = std::vector(nx,std::vector(ny,std::vector<geo::Point3D>(nz)));
         
         // Create PointCloud
         double x = refPoint.x();
-        for (int ix = 0; ix < nx; ix++)
+        for (int ix = 0; ix < m_nx; ix++)
         {
             double y = refPoint.y();
-            for (int iy = 0; iy < ny; iy++)
+            for (int iy = 0; iy < m_ny; iy++)
             {
                 double z = refPoint.z();
-                for (int iz = 0; iz < nz; iz++)
+                for (int iz = 0; iz < m_nz; iz++)
                 {
-                    pointCloud[ix][iy][iz] = geo::Point3D(x,y,z);
+                    m_pointCloud[ix][iy][iz] = geo::Point3D(x,y,z);
                     z+= deltaS;
                 }
                 
@@ -60,7 +52,25 @@ namespace calc
             
             x += deltaS;
         }
+    }
 
+    /// Removes all points on the trajectory of the sphere
+    /// @note Curve is linearly interpolated between steps
+    /// 
+    ///	@param sphereRadius radius R of the sphere
+    ///	@param curve 3d curve that defines trajectory of the sphere
+    ///	@param deltaT step size for 3d curve parameter
+    ///	@throws std::invalid_argument if deltaT is not greater than 0.
+    void PointCloud::RemovePointsOnSpherePath(
+            const double sphereRadius,
+            const geo::Curve& curve,
+            const double deltaT)
+    {
+        if(deltaT <= 0)
+        {
+            throw std::invalid_argument("Invalid argument for RemovePointsOnSpherePath. deltaT has to be greater than 0.");
+        }
+        
         // Remove points along trajectory of sphere
         double startTime = 0.0;
         double endTime = deltaT;
@@ -73,13 +83,13 @@ namespace calc
             geo::Point3D direction = sphereEndPoint - sphereStartPoint;
             
             // Gather points to delete on travel path between start and end time
-            for (int ix = 0; ix < pointCloud.size(); ix++)
+            for (int ix = 0; ix < m_pointCloud.size(); ix++)
             {
-                for (int iy = 0; iy < pointCloud[ix].size(); iy++)
+                for (int iy = 0; iy < m_pointCloud[ix].size(); iy++)
                 {
-                    for (int iz = 0; iz < pointCloud[ix][iy].size(); iz++)
+                    for (int iz = 0; iz < m_pointCloud[ix][iy].size(); iz++)
                     {
-                        geo::Point3D curPoint = pointCloud[ix][iy][iz];
+                        geo::Point3D curPoint = m_pointCloud[ix][iy][iz];
                         
                         // Add deleted points around sphere start point
                         geo::Point3D distance = curPoint - sphereStartPoint;
@@ -129,7 +139,7 @@ namespace calc
             for(int i = deletePoints.size() - 1; i >= 0; i--)
             {
                 geo::Point3I point = deletePoints[i];
-                pointCloud[point.x()][point.y()].erase(pointCloud[point.x()][point.y()].begin() + point.z());
+                m_pointCloud[point.x()][point.y()].erase(m_pointCloud[point.x()][point.y()].begin() + point.z());
             }
             deletePoints.clear();
 
@@ -143,18 +153,28 @@ namespace calc
                 endTime = 1.0;
             }
         }
-        
+    };
+
+
+    /// Calculate all points visible from above and saves them to the given file path
+    ///
+    /// @param outputFileName name of the output file with result
+    void PointCloud::CalculatePointsOnTopAndSaveToFile(
+            const std::filesystem::path& outputFileName)
+    {
+        io::TestOutput to(outputFileName);
+
         // Write uppermost points to file
-        for (int ix = 0; ix < pointCloud.size(); ix++)
+        for (int ix = 0; ix < m_pointCloud.size(); ix++)
         {
-            for (int iy = 0; iy < pointCloud[ix].size(); iy++)
+            for (int iy = 0; iy < m_pointCloud[ix].size(); iy++)
             {
-                if(pointCloud[ix][iy].empty())
+                if(m_pointCloud[ix][iy].empty())
                 {
                     continue;
                 }
                 
-                to.Write(pointCloud[ix][iy].back());
+                to.Write(m_pointCloud[ix][iy].back());
             }
         }
     }
