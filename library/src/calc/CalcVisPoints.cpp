@@ -39,7 +39,7 @@ namespace calc
         io::TestOutput to(outputFileName);
         
         // Implement your solution here:
-        std::vector pointCloud(nx,std::vector(ny,std::vector<geo::Point3D>(nz)));
+        std::vector<std::vector<std::vector<geo::Point3D>>> pointCloud(nx,std::vector(ny,std::vector<geo::Point3D>(nz)));
         
         // Create PointCloud
         double x = refPoint.x();
@@ -62,17 +62,17 @@ namespace calc
         }
 
         // Remove points along trajectory of sphere
-        double t1 = 0.0;
-        double t2 = deltaT;
+        double startTime = 0.0;
+        double endTime = deltaT;
         const double sphereRadiusSquared = std::pow(sphereRadius,2.0);
         std::vector<geo::Point3I> deletePoints;
-        while(t2 <= 1.0)
+        while(endTime <= 1.0)
         {
-            geo::Point3D sphereStartPoint = curve.Evaluate(t1);
-            geo::Point3D sphereEndPoint = curve.Evaluate(t2);
+            geo::Point3D sphereStartPoint = curve.Evaluate(startTime);
+            geo::Point3D sphereEndPoint = curve.Evaluate(endTime);
             geo::Point3D direction = sphereEndPoint - sphereStartPoint;
             
-            // Gather points to delete on travel path between timesteps t1 and t2
+            // Gather points to delete on travel path between start and end time
             for (int ix = 0; ix < pointCloud.size(); ix++)
             {
                 for (int iy = 0; iy < pointCloud[ix].size(); iy++)
@@ -90,7 +90,7 @@ namespace calc
                         }
 
                         // Only check travel endpoint at last time step
-                        if(t2 >= 1.0)
+                        if(endTime >= 1.0)
                         {
                             //Add deleted points around sphere end point
                             distance = curPoint - sphereEndPoint;
@@ -134,13 +134,13 @@ namespace calc
             deletePoints.clear();
 
             // Increase Timestep
-            t1 = t2;
-            t2 += deltaT;
+            startTime = endTime;
+            endTime += deltaT;
             
             // Correct last step in case it overshoots
-            if(t1 < 1.0 && t2 > 1.0)
+            if(startTime < 1.0 && endTime > 1.0)
             {
-                t2 = 1.0;
+                endTime = 1.0;
             }
         }
         
