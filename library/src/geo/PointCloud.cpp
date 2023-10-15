@@ -1,10 +1,10 @@
-﻿#include "calc/CalcVisPoints.hpp"
+﻿#include "geo/PointCloud.hpp"
 
 #include "io/TestOutput.hpp"
 
 #include <vector>
 
-namespace calc
+namespace geo
 {
     /// Create PointCloud
     ///

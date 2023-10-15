@@ -5,7 +5,7 @@
 
 #include <filesystem>
 
-namespace calc
+namespace geo
 {
     class PointCloud
     {
@@ -31,15 +31,4 @@ namespace calc
         const double m_deltaS;
         std::vector<std::vector<std::vector<geo::Point3D>>> m_pointCloud;
     };
-    
-    void Calculate(
-        const geo::Point3D& refPoint,
-        const int nx,
-        const int ny,
-        const int nz,
-        const double deltaS,
-        const double sphereRadius,
-        const geo::Curve& curve,
-        const double deltaT,
-        const std::filesystem::path& outputFileName);
 }
