@@ -16,7 +16,7 @@ namespace geo
     ///	@param deltaS distance between neighboring cloud points along x, y and z axis
     ///	@throws std::invalid_argument if any of the parameters (nx, ny, nz or deltaS) are not greater than 0.
     PointCloud::PointCloud(
-        const geo::Point3D& refPoint,
+        const Point3D& refPoint,
         const int nx,
         const int ny,
         const int nz,
@@ -31,7 +31,7 @@ namespace geo
             throw std::invalid_argument("Invalid argument for PointCloud Constructor. nx, ny, nz and deltaS have to be greater than 0.");
         }
         
-        m_pointCloud = std::vector(nx,std::vector(ny,std::vector<geo::Point3D>(nz)));
+        m_pointCloud = std::vector(nx,std::vector(ny,std::vector<Point3D>(nz)));
         
         // Create PointCloud
         double x = refPoint.x();
@@ -43,7 +43,7 @@ namespace geo
                 double z = refPoint.z();
                 for (int iz = 0; iz < m_nz; iz++)
                 {
-                    m_pointCloud[ix][iy][iz] = geo::Point3D(x,y,z);
+                    m_pointCloud[ix][iy][iz] = Point3D(x,y,z);
                     z+= deltaS;
                 }
                 
@@ -63,7 +63,7 @@ namespace geo
     ///	@throws std::invalid_argument if deltaT is not greater than 0.
     void PointCloud::RemovePointsOnSpherePath(
             const double sphereRadius,
-            const geo::Curve& curve,
+            const Curve& curve,
             const double deltaT)
     {
         if(deltaT <= 0)
@@ -75,12 +75,12 @@ namespace geo
         double startTime = 0.0;
         double endTime = deltaT;
         const double sphereRadiusSquared = std::pow(sphereRadius,2.0);
-        std::vector<geo::Point3I> deletePoints;
+        std::vector<Point3I> deletePoints;
         while(endTime <= 1.0)
         {
-            geo::Point3D sphereStartPoint = curve.Evaluate(startTime);
-            geo::Point3D sphereEndPoint = curve.Evaluate(endTime);
-            geo::Point3D direction = sphereEndPoint - sphereStartPoint;
+            Point3D sphereStartPoint = curve.Evaluate(startTime);
+            Point3D sphereEndPoint = curve.Evaluate(endTime);
+            Point3D direction = sphereEndPoint - sphereStartPoint;
             
             // Gather points to delete on travel path between start and end time
             for (int ix = 0; ix < m_pointCloud.size(); ix++)
@@ -89,13 +89,12 @@ namespace geo
                 {
                     for (int iz = 0; iz < m_pointCloud[ix][iy].size(); iz++)
                     {
-                        geo::Point3D curPoint = m_pointCloud[ix][iy][iz];
+                        Point3D curPoint = m_pointCloud[ix][iy][iz];
                         
                         // Add deleted points around sphere start point
-                        geo::Point3D distance = curPoint - sphereStartPoint;
-                        if(distance.Length2() <= sphereRadiusSquared)
+                        if(IsPointInSphere(curPoint, sphereStartPoint, sphereRadiusSquared))
                         {
-                            deletePoints.emplace_back(geo::Point3I(ix,iy,iz));
+                            deletePoints.emplace_back(Point3I(ix,iy,iz));
                             continue;
                         }
 
@@ -103,10 +102,9 @@ namespace geo
                         if(endTime >= 1.0)
                         {
                             //Add deleted points around sphere end point
-                            distance = curPoint - sphereEndPoint;
-                            if(distance.Length2() <= sphereRadiusSquared)
+                            if(IsPointInSphere(curPoint, sphereEndPoint, sphereRadiusSquared))
                             {
-                                deletePoints.emplace_back(geo::Point3I(ix,iy,iz));
+                                deletePoints.emplace_back(Point3I(ix,iy,iz));
                                 continue;
                             }
                         }
@@ -122,13 +120,13 @@ namespace geo
                         {
                             continue;
                         }
-                        geo::Point3D orthoIntersectPoint = sphereStartPoint + direction * lineSegment;
+                        Point3D orthoIntersectPoint = sphereStartPoint + direction * lineSegment;
 
                         // Add deleted points on linear path of sphere
-                        distance = curPoint - orthoIntersectPoint;
+                        Point3D distance = curPoint - orthoIntersectPoint;
                         if(distance.Length2() <= sphereRadiusSquared)
                         {
-                            deletePoints.emplace_back(geo::Point3I(ix,iy,iz));
+                            deletePoints.emplace_back(Point3I(ix,iy,iz));
                             continue;
                         }
                     }
@@ -138,7 +136,7 @@ namespace geo
             // Delete points backwards so cached array positions stay correct when Array size changes
             for(int i = deletePoints.size() - 1; i >= 0; i--)
             {
-                geo::Point3I point = deletePoints[i];
+                Point3I point = deletePoints[i];
                 m_pointCloud[point.x()][point.y()].erase(m_pointCloud[point.x()][point.y()].begin() + point.z());
             }
             deletePoints.clear();
@@ -178,4 +176,10 @@ namespace geo
             }
         }
     }
+
+    bool PointCloud::IsPointInSphere(Point3D point, Point3D sphereCenter, double sphereRadiusSquared)
+    {
+        return (point - sphereCenter).Length2() <= sphereRadiusSquared;
+    }
+
 }
