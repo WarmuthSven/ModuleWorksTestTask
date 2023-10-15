@@ -35,8 +35,8 @@ namespace calc
         
         // Implement your solution here:
         std::vector pointCloud(nx,std::vector(ny,std::vector<geo::Point3D>(nz)));
-
-        // Create Base PointCloud
+        
+        // Create PointCloud
         double x = refPoint.x();
         for (int ix = 0; ix < nx; ix++)
         {
@@ -66,7 +66,8 @@ namespace calc
             geo::Point3D sphereStartPoint = curve.Evaluate(t1);
             geo::Point3D sphereEndPoint = curve.Evaluate(t2);
             geo::Point3D direction = sphereEndPoint - sphereStartPoint;
-            // Delete points in Sphere at Start and Endpoint
+            
+            // Gather points to delete on travel path between timesteps t1 and t2
             for (int ix = 0; ix < pointCloud.size(); ix++)
             {
                 for (int iy = 0; iy < pointCloud[ix].size(); iy++)
@@ -75,7 +76,7 @@ namespace calc
                     {
                         geo::Point3D curPoint = pointCloud[ix][iy][iz];
                         
-                        //Add deleted elements around sphere start point
+                        // Add deleted points around sphere start point
                         geo::Point3D distance = curPoint - sphereStartPoint;
                         if(distance.Length2() <= sphereRadiusSquared)
                         {
@@ -83,10 +84,10 @@ namespace calc
                             continue;
                         }
 
-                        //Only check end of travel at last time frame
+                        // Only check travel endpoint at last time step
                         if(t2 >= 1.0)
                         {
-                            //Add deleted elements around sphere end point
+                            //Add deleted points around sphere end point
                             distance = curPoint - sphereEndPoint;
                             if(distance.Length2() <= sphereRadiusSquared)
                             {
@@ -95,14 +96,20 @@ namespace calc
                             }
                         }
                         
-                        //Add deleted elements on linear path
-                        const double pathwaySegment = (curPoint * direction - sphereStartPoint * direction) / (direction * direction);
-                        if(pathwaySegment < 0 || pathwaySegment > 1)
+                        // Calculate perpendicular distance of point to direction of travel
+                        // If lineSegment is not between start and end point, disregard it
+                        // Algorithm Basics:
+                        // (1) (curPoint - orthoIntersectionPoint) * direction = 0
+                        // (2) orthoIntersectionPoint = sphereStartPoint + lineSegment * direction
+                        // Note: direction in equation (2) must not be normed
+                        const double lineSegment = (curPoint * direction - sphereStartPoint * direction) / (direction * direction);
+                        if(lineSegment < 0 || lineSegment > 1)
                         {
                             continue;
                         }
+                        geo::Point3D orthoIntersectPoint = sphereStartPoint + direction * lineSegment;
 
-                        geo::Point3D orthoIntersectPoint = sphereStartPoint + direction * pathwaySegment;
+                        // Add deleted points on linear path of sphere
                         distance = curPoint - orthoIntersectPoint;
                         if(distance.Length2() <= sphereRadiusSquared)
                         {
@@ -113,28 +120,30 @@ namespace calc
                 }
             }
             
-            // Delete points backwards so array positions stay correct when Array size changes
+            // Delete points backwards so cached array positions stay correct when Array size changes
             for(int i = deletePoints.size() - 1; i >= 0; i--)
             {
                 geo::Point3I point = deletePoints[i];
                 pointCloud[point.x()][point.y()].erase(pointCloud[point.x()][point.y()].begin() + point.z());
             }
             deletePoints.clear();
-            
+
+            // Increase Timestep
             t1 = t2;
             t2 += deltaT;
+            
+            // Correct last step in case it overshoots
             if(t1 < 1.0 && t2 > 1.0)
             {
                 t2 = 1.0;
             }
         }
         
-        // Write uppermost points to file, x before y coordinates
+        // Write uppermost points to file
         for (int ix = 0; ix < pointCloud.size(); ix++)
         {
             for (int iy = 0; iy < pointCloud[ix].size(); iy++)
             {
-                // TODO: Check if vector is empty, than ignore point
                 to.Write(pointCloud[ix][iy].back());
             }
         }
