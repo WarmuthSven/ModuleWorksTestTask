@@ -1,19 +1,27 @@
 # ModuleWorks TestTask
 ## Mathematical Approaches
 ### Point in Sphere
-To find an intersection between a sphere with radius R and a point
-you need to calculate the euclidean distance between
-the centerpoint Ps of the sphere and point P in the pointcloud.
-The point lies inside of the sphere if the distance d is smaller than or equal to the radius R.
+To find an intersection between a sphere with radius $R$ and a cloud point $P$
+you need to calculate the euclidean distance $d$ between
+the centerpoint $P_c$ of the sphere and point $P$.
+The point lies inside of the sphere if the distance $d$ is smaller than or equal to the radius $R$.
 
-Therefore the difference vector between centerpoint and cloudpoints is calculated.
-Squaring all single entries of the difference vector
-and taking the square root of the sum is equal to the distance.
+Therefore the difference vector between $P_c$ and $P$ is calculated.
 
-Using the given Point3-library, I subracted the point from the centerpoint to get the distance vector
-and used the function length2() to get the squared distance of the vector.
-Instead of taking the square root, I squared the radius once as well and used that to quickly compare
-if a point lies inside of the sphere.
+$$ d_{vec} = P_c - P $$ 
+
+Squaring all single entries of the difference vector $d_{vec}$
+and taking the square root of the sum is equal to the distance $d$.
+
+$$ \sqrt{d_{vec,x}^2 + d_{vec,y}^2 + d_{vec,z}^2} <= R $$
+
+Using the given Point3-library, I subracted the point $P$ from the centerpoint $P_c$ to get the distance vector $d_{vec}$
+and used the function length2() to get the squared distance $d^2$ of the vector.
+Instead of taking the square root, I squared the radius $R$ once as well and used that to quickly compare
+if a point $P$ lies inside of the sphere.
+
+$$ d_{vec,x}^2 + d_{vec,y}^2 + d_{vec,z}^2 <= R^2 $$
+
 This is a faster approach as it only uses elementary operations,
 while using square root is a way more expensive operation.
 
