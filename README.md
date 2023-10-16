@@ -8,14 +8,14 @@ The point lies inside of the sphere if the distance $d$ is smaller than or equal
 
 Therefore the difference vector between $P_c$ and $P$ is calculated.
 
-$$ d_{vec} = P_c - P $$ 
+$$ d_{dist} = P_c - P $$ 
 
-Squaring all single entries of the difference vector $d_{vec}$
+Squaring all single entries of the difference vector $d_{dist}$
 and taking the square root of the sum is equal to the distance $d$.
 
 $$ \sqrt{d_{vec,x}^2 + d_{vec,y}^2 + d_{vec,z}^2} <= R $$
 
-Using the given Point3-library, I subracted the point $P$ from the centerpoint $P_c$ to get the distance vector $d_{vec}$
+Using the given Point3-library, I subracted the point $P$ from the centerpoint $P_c$ to get the distance vector $d_{dist}$
 and used the function length2() to get the squared distance $d^2$ of the vector.
 Instead of taking the square root, I squared the radius $R$ once as well and used that to quickly compare
 if a point $P$ lies inside of the sphere.
@@ -26,47 +26,50 @@ This is a faster approach as it only uses elementary operations,
 while using square root is a way more expensive operation.
 
 ### Point on sphere path
-As the sphere path can be modelled by a cylinder between two points,
-you only need to find an intersection of a cylinder and a point.
-For that you need to calculate the orthogonal distance between the cylinder axis and the point.
-The point lies inside an infinite long sphere,
-if the orthogonal distance is smaller than or equal to the radius.
-Assuming a line, that is orthogonal to the axis and intersects with the axis as well as the point.
-If the intersection point between this line and the axis is between the start and end point on the path,
-the cloud point lies inside the cylinder with both constraints fulfilled.
+As the sphere path can be modelled by a cylinder between two points $P_1$ and $P_2$,
+you only need to find an intersection of a cylinder and a point $P$.
+For that you need to calculate the orthogonal distance $d$ between the cylinder axis $d_{cyl}$ and the point $P$.
+The point $P$ lies inside an infinite long sphere,
+if the orthogonal distance $d$ is smaller than or equal to the radius $R$.
+Assume a line $d_{orth}$, that is orthogonal to and intersects with the axis $d_{cyl}$ as well as the point $P$.
+If the intersection point $P_{sec}$ between line $d_{orth}$ and the axis $d_{cyl}$ is between $P_1$ and $P_2$,
+the cloud point $P$ lies inside the cylinder.
 
-To get this intersection point, you need to solve an equation.
-The scalar product of the distance vector and the axis vector has to be 0,
+To get this intersection point $P_{sec}$, you need to solve an equation.
+The scalar product of the distance vector $d_{dist}$ and the axis $d_{cyl}$ has to be 0,
 only then they are perpendicular to each other.
 
-$$ distanceVector * axis = 0 $$
+$$ d_{dist}* d_{cyl} = 0 $$
 
-The distance vector is calculated by subtracting the intersection point from
-the cloud point.
+The distance vector $d_{dist}$ is calculated by subtracting the intersection point $P_{sec}$ from
+the cloud point $P$.
 
-$$ distanceVector = cloudPoint - intersectionPoint $$
+$$ d_{dist} = P - P_{sec} $$
 
-The axis vector is calculated by subtracting the start point from the end point.
+The axis $d_{cyl}$ is calculated by subtracting the start point $P_1$ from the end point $P_2$.
 
-$$ axis =  endPoint - startPoint $$
+$$ d_{cyl} =  P_2 - P_1 $$
 
-The intersection point on the axis is defined
-by multiplying the axis vector with an unknown scalar value x
-and adding it to the start Point.
-The scalar value has to be in the closed range [0,1] for the intersection point
-to lie between start and end point.
+The intersection point $P_{sec}$ on the axis $d_{cyl}$ is defined
+by multiplying $d_{cyl}$ with an unknown scalar value $x$
+and adding it to $P_1$.
+$x$ has to be in the closed range $[0,1]$ for the intersection point $P_{sec}$
+to lie between $P_1$ and $P_2$.
 
-$$ intersectionPoint = startPoint + axis * x $$
+$$ P_{sec} = P_1 + d_{cyl} * x $$
 
-Then you can insert the definition for the intersection point into the orthogonality constraint
-and solve it for the unknown scalar value.
-After that you can calculate the intersection point and with that the distance between the axis and the cloud point.
+Then you can insert the definition for the intersection point $P_{sec}$ into the orthogonality constraint
+and solve it for the unknown scalar value $x$.
 
-I calculated the line Segment on which the intersection point lies,
+$$ x = {P * d_{cyl} - P_1 * d_{cyl} \over d_{cyl} * d_{cyl}} $$
+
+After that you can calculate the intersection point $P_{sec}$ and with that the distance $d$ between the axis $d_{cyl}$ and the cloud point $P$.
+
+I calculated the line Segment $x$ on which the intersection point $P_{sec}$ lies,
 by solving the equation and using the scalar product of the given Point3-library.
-Then I checked if it is in the range [0,1].
-After that I calculated the intersection point and the squared distance
-between the cloud and intersection point and compared it to the squared radius.
+Then I checked if $x$ is in the closed range [0,1].
+After that I calculated the intersection point $P_{sec}$ and the squared distance $d^2$
+between $P$ and $P_{sec}$ and compared it to the squared radius $R^2$.
  
 ## Problems with discrete steps
 On a linear path of a sphere, the discrete steps have no influence
