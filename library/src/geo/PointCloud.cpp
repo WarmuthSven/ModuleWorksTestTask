@@ -163,8 +163,8 @@ namespace geo
     /// @return true, if point lies in cylinder
     bool PointCloud::IsPointInCylinder(const Point3D point, const Point3D bottomPoint, const Point3D axis, const double sphereRadiusSquared)
     {
-        // Calculate perpendicular distance of point to direction of travel
-        // If lineSegment is not between start and end point, disregard it
+        // Calculate perpendicular distance of point to axis
+        // If lineSegment lies not on the axis, disregard it
         // Algorithm Basics:
         // (1) (curPoint - orthoIntersectionPoint) * axis = 0
         // (2) orthoIntersectPoint = bottomPoint + axis * lineSegment
