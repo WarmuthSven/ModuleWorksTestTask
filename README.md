@@ -29,7 +29,7 @@ while using square root is a way more expensive operation.
 As the sphere path can be modelled by a cylinder between two points $P_1$ and $P_2$,
 you only need to find an intersection of a cylinder and a point $P$.
 For that you need to calculate the orthogonal distance $d$ between the cylinder axis $d_{cyl}$ and the point $P$.
-The point $P$ lies inside an infinite long sphere,
+The point $P$ lies inside an infinite long cylinder,
 if the orthogonal distance $d$ is smaller than or equal to the radius $R$.
 Assume a line $d_{orth}$, that is orthogonal to and intersects with the axis $d_{cyl}$ as well as the point $P$.
 If the intersection point $P_{sec}$ between line $d_{orth}$ and the axis $d_{cyl}$ is between $P_1$ and $P_2$,
@@ -67,7 +67,7 @@ After that you can calculate the intersection point $P_{sec}$ and with that the 
 
 I calculated the line Segment $x$ on which the intersection point $P_{sec}$ lies,
 by solving the equation and using the scalar product of the given Point3-library.
-Then I checked if $x$ is in the closed range [0,1].
+Then I checked if $x$ is in the closed range $[0,1]$.
 After that I calculated the intersection point $P_{sec}$ and the squared distance $d^2$
 between $P$ and $P_{sec}$ and compared it to the squared radius $R^2$.
  
