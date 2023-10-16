@@ -1,7 +1,7 @@
 // (C) 2022 by ModuleWorks GmbH
 
 #include "io/TestInput.hpp"
-#include "calc/CalcVisPoints.hpp"
+#include "geo/PointCloud.hpp"
 
 #include <filesystem>
 #include <iostream>
@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 	{
 		io::TestInput test(testInput);
 
-		calc::PointCloud pointCloud = calc::PointCloud(
+		geo::PointCloud pointCloud = geo::PointCloud(
 			test.cloudReferencePoint,
 			test.cloudNX,
 			test.cloudNY,

@@ -17,10 +17,10 @@ namespace geo
         const double deltaS);
 
         void RemovePointsOnSpherePath(const double sphereRadius, const Curve& curve, const double deltaT);
-        void CalculatePointsOnTopAndSaveToFile(const std::filesystem::path& outputFileName);
+        void CalculatePointsOnTopAndSaveToFile(const std::filesystem::path& outputFileName) const;
     private:
-        bool IsPointInSphere(Point3D point, Point3D sphereCenter, double sphereRadiusSquared);
-        bool IsPointInCylinder(Point3D point, Point3D startPoint, Point3D axis, double sphereRadiusSquared);
+        static bool IsPointInSphere(const Point3D point, const Point3D sphereCenter, const double sphereRadiusSquared);
+        static bool IsPointInCylinder(const Point3D point, const Point3D bottomPoint, const Point3D axis, const double sphereRadiusSquared);
         
         const Point3D m_refPoint;
         const int m_nx;

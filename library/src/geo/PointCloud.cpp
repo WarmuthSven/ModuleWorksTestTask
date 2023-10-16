@@ -31,9 +31,9 @@ namespace geo
             throw std::invalid_argument("Invalid argument for PointCloud Constructor. nx, ny, nz and deltaS have to be greater than 0.");
         }
         
+        // Create PointCloud
         m_pointCloud = std::vector(nx,std::vector(ny,std::vector<Point3D>(nz)));
         
-        // Create PointCloud
         double x = refPoint.x();
         for (int ix = 0; ix < m_nx; ix++)
         {
@@ -44,13 +44,13 @@ namespace geo
                 for (int iz = 0; iz < m_nz; iz++)
                 {
                     m_pointCloud[ix][iy][iz] = Point3D(x,y,z);
-                    z+= deltaS;
+                    z+= m_deltaS;
                 }
                 
-                y+= deltaS;
+                y+= m_deltaS;
             }
             
-            x += deltaS;
+            x += m_deltaS;
         }
     }
 
@@ -66,86 +66,50 @@ namespace geo
             const Curve& curve,
             const double deltaT)
     {
-        if(deltaT <= 0)
+        if(deltaT <= 0 || deltaT > 1)
         {
-            throw std::invalid_argument("Invalid argument for RemovePointsOnSpherePath. deltaT has to be greater than 0.");
-        }
+            throw std::invalid_argument("Invalid argument for RemovePointsOnSpherePath. deltaT has to be greater than 0 and smaller than 1.");
+        } 
         
-        // Remove points along trajectory of sphere
         double startTime = 0.0;
         double endTime = deltaT;
-        const double sphereRadiusSquared = std::pow(sphereRadius,2.0);
-        std::vector<Point3I> deletePoints;
+        Point3D sphereStartPoint = curve.Evaluate(startTime);
+        const double sphereRadiusSquared = std::pow(sphereRadius,2);
+        
+        // Iterate through time and through each point in the pointCloud
         while(endTime <= 1.0)
         {
-            Point3D sphereStartPoint = curve.Evaluate(startTime);
             Point3D sphereEndPoint = curve.Evaluate(endTime);
-            Point3D direction = sphereEndPoint - sphereStartPoint;
+            const Point3D cylinderAxis = sphereEndPoint - sphereStartPoint;
             
             // Gather points to delete on travel path between start and end time
-            for (int ix = 0; ix < m_pointCloud.size(); ix++)
+            for (int ix = 0; ix < m_nx; ix++)
             {
-                for (int iy = 0; iy < m_pointCloud[ix].size(); iy++)
+                for (int iy = 0; iy < m_ny; iy++)
                 {
-                    for (int iz = 0; iz < m_pointCloud[ix][iy].size(); iz++)
+                    // Iterate zVector backwards so array size can change while deleting
+                    std::vector<Point3<double>>& zVector = m_pointCloud[ix][iy];
+                    for (int iz = static_cast<int>(zVector.size()) - 1; iz >= 0 ; iz--)
                     {
-                        Point3D curPoint = m_pointCloud[ix][iy][iz];
+                        const Point3D& curPoint = zVector[iz];
                         
-                        // Add deleted points around sphere start point
-                        if(IsPointInSphere(curPoint, sphereStartPoint, sphereRadiusSquared))
+                        // Delete points around sphere start point, end point and on travel path (cylinder)
+                        if(startTime <= 0 && IsPointInSphere(curPoint, sphereStartPoint, sphereRadiusSquared)
+                            || IsPointInSphere(curPoint, sphereEndPoint, sphereRadiusSquared)
+                            || IsPointInCylinder(curPoint, sphereStartPoint, cylinderAxis, sphereRadiusSquared))
                         {
-                            deletePoints.emplace_back(Point3I(ix,iy,iz));
-                            continue;
-                        }
-
-                        // Only check travel endpoint at last time step
-                        if(endTime >= 1.0)
-                        {
-                            //Add deleted points around sphere end point
-                            if(IsPointInSphere(curPoint, sphereEndPoint, sphereRadiusSquared))
-                            {
-                                deletePoints.emplace_back(Point3I(ix,iy,iz));
-                                continue;
-                            }
-                        }
-                        
-                        // Calculate perpendicular distance of point to direction of travel
-                        // If lineSegment is not between start and end point, disregard it
-                        // Algorithm Basics:
-                        // (1) (curPoint - orthoIntersectionPoint) * direction = 0
-                        // (2) orthoIntersectionPoint = sphereStartPoint + lineSegment * direction
-                        // Note: direction in equation (2) must not be normed
-                        const double lineSegment = (curPoint * direction - sphereStartPoint * direction) / (direction * direction);
-                        if(lineSegment < 0 || lineSegment > 1)
-                        {
-                            continue;
-                        }
-                        Point3D orthoIntersectPoint = sphereStartPoint + direction * lineSegment;
-
-                        // Add deleted points on linear path of sphere
-                        Point3D distance = curPoint - orthoIntersectPoint;
-                        if(distance.Length2() <= sphereRadiusSquared)
-                        {
-                            deletePoints.emplace_back(Point3I(ix,iy,iz));
-                            continue;
-                        }
+                            zVector.erase(zVector.begin() + iz);
+                        }                       
                     }
                 }
             }
-            
-            // Delete points backwards so cached array positions stay correct when Array size changes
-            for(int i = deletePoints.size() - 1; i >= 0; i--)
-            {
-                Point3I point = deletePoints[i];
-                m_pointCloud[point.x()][point.y()].erase(m_pointCloud[point.x()][point.y()].begin() + point.z());
-            }
-            deletePoints.clear();
 
-            // Increase Timestep
+            // Go to next point
             startTime = endTime;
-            endTime += deltaT;
+            sphereStartPoint = sphereEndPoint;
             
-            // Correct last step in case it overshoots
+            // Increase and correct next step in case it overshoots
+            endTime += deltaT;
             if(startTime < 1.0 && endTime > 1.0)
             {
                 endTime = 1.0;
@@ -157,29 +121,62 @@ namespace geo
     /// Calculate all points visible from above and saves them to the given file path
     ///
     /// @param outputFileName name of the output file with result
-    void PointCloud::CalculatePointsOnTopAndSaveToFile(
-            const std::filesystem::path& outputFileName)
+    void PointCloud::CalculatePointsOnTopAndSaveToFile (
+            const std::filesystem::path& outputFileName) const
     {
-        io::TestOutput to(outputFileName);
+        const io::TestOutput to(outputFileName);
 
         // Write uppermost points to file
-        for (int ix = 0; ix < m_pointCloud.size(); ix++)
+        for (auto& xyMatrix : m_pointCloud)
         {
-            for (int iy = 0; iy < m_pointCloud[ix].size(); iy++)
+            for (auto& zVector : xyMatrix)
             {
-                if(m_pointCloud[ix][iy].empty())
+                if(zVector.empty())
                 {
                     continue;
                 }
                 
-                to.Write(m_pointCloud[ix][iy].back());
+                to.Write(zVector.back());
             }
         }
     }
 
-    bool PointCloud::IsPointInSphere(Point3D point, Point3D sphereCenter, double sphereRadiusSquared)
+    /// Calculate if point lies in sphere
+    ///
+    /// @param point point to check if in sphere
+    /// @param sphereCenter center of the sphere
+    /// @param sphereRadiusSquared the radius of the sphere squared
+    /// @note squared radius is used to avoid use of expensive square root
+    /// @return true, if point lies in sphere
+    bool PointCloud::IsPointInSphere(const Point3D point, const Point3D sphereCenter, const double sphereRadiusSquared)
     {
         return (point - sphereCenter).Length2() <= sphereRadiusSquared;
     }
 
+    /// Calculate if point lies in cylinder
+    ///
+    /// @param point point to check if in cylinder
+    /// @param bottomPoint bottom point of the cylinder
+    /// @param axis axis of the cylinder, has to contain full height of cylinder and must not be normed!
+    /// @param sphereRadiusSquared the radius of the sphere squared
+    /// @note squared radius is used to avoid use of expensive square root
+    /// @return true, if point lies in cylinder
+    bool PointCloud::IsPointInCylinder(const Point3D point, const Point3D bottomPoint, const Point3D axis, const double sphereRadiusSquared)
+    {
+        // Calculate perpendicular distance of point to direction of travel
+        // If lineSegment is not between start and end point, disregard it
+        // Algorithm Basics:
+        // (1) (curPoint - orthoIntersectionPoint) * axis = 0
+        // (2) orthoIntersectPoint = bottomPoint + axis * lineSegment
+        const double lineSegment = (point * axis - bottomPoint * axis) / (axis * axis);
+        
+        if(lineSegment < 0 || lineSegment > 1)
+        {
+            return false;
+        }
+        
+        const Point3D orthoIntersectPoint = bottomPoint + axis * lineSegment;
+        
+        return (point - orthoIntersectPoint).Length2() <= sphereRadiusSquared;
+    }
 }
