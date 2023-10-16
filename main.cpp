@@ -1,7 +1,7 @@
 // (C) 2022 by ModuleWorks GmbH
 
 #include "io/TestInput.hpp"
-#include "calc/CalcVisPoints.hpp"
+#include "geo/PointCloud.hpp"
 
 #include <filesystem>
 #include <iostream>
@@ -21,16 +21,19 @@ int main(int argc, char* argv[])
 	{
 		io::TestInput test(testInput);
 
-		calc::Calculate(
+		geo::PointCloud pointCloud = geo::PointCloud(
 			test.cloudReferencePoint,
 			test.cloudNX,
 			test.cloudNY,
 			test.cloudNZ,
-			test.cloudDeltaS,
+			test.cloudDeltaS);
+		
+		pointCloud.RemovePointsOnSpherePath(
 			test.sphereRadius,
 			*test.curve,
-			test.curveDeltaT,
-			testOutput);
+			test.curveDeltaT);
+
+		pointCloud.CalculatePointsOnTopAndSaveToFile(testOutput);
 	}
 	catch (std::exception& e)
 	{
